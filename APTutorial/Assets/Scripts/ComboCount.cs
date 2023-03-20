@@ -10,6 +10,7 @@ public class ComboCount : MonoBehaviour
     public float startTime;
     public float currentTime;
     private int lastNum;
+    private LevelStuff stuff;
     // Start is called before the first frame update
     void Start()
     {
@@ -22,11 +23,11 @@ public class ComboCount : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (comboNum > 1 && (currentTime - startTime) < 3 && comboNum > lastNum)
+        if (comboNum > 1 && (currentTime - startTime) < 4 && comboNum > lastNum)
         {
             combo.text = "Combo: " + comboNum + "x";
             startTime = Time.time;
-        } else if (comboNum > 1 && (currentTime - startTime) > 3)
+        } else if (comboNum > 1 && (currentTime - startTime) > 4)
         {
             comboNum = 0;
             combo.text = "";

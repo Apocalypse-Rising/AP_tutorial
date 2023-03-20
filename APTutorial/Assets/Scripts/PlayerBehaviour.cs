@@ -28,6 +28,9 @@ public class PlayerBehaviour : MonoBehaviour
     private float wallJumpingDuration = 0.4f;
     private Vector2 wallJumpingPower = new Vector2(8f, 16f);
     public  bool check = false;
+    private bool knockLeft = false;
+    public float knockback;
+    private float knockBackTime;
 
     Collider2D currentWall = null;
     Collider2D lastWall = null;
@@ -39,11 +42,15 @@ public class PlayerBehaviour : MonoBehaviour
     [SerializeField] private Transform wallCheck;
     [SerializeField] private LayerMask wallLayer;
     private ComboCount comboGet;
+    private GameObject get;
+    private Healthbar health;
     // Start is called before the first frame update
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         comboGet = GetComponent<ComboCount>();
+        get = GameObject.FindGameObjectWithTag("HealthBar");
+        health = get.GetComponent<Healthbar>();
     }
 
   
@@ -61,82 +68,86 @@ public class PlayerBehaviour : MonoBehaviour
             comboGet.comboNum += 1;
             check = false;
         }
-
-        horizontal = Input.GetAxisRaw("Horizontal");
-        animator.SetFloat("speed", horizontal);
-
-        if (horizontal < 0)
+        if (knockBackTime <= 0)
         {
-            animator.SetBool("is running", true);
 
-            transform.localScale = new Vector3(-2, 2, 2);
-        }
-        else if (horizontal > 0)
-        {
-            animator.SetBool("is running", true);
+            horizontal = Input.GetAxisRaw("Horizontal");
+            animator.SetFloat("speed", horizontal);
 
-            transform.localScale = new Vector3(2, 2, 2);
-        }
-        else if (horizontal == 0)
-        {
-            animator.SetBool("is running", false);
-
-        }
-
-
-        WallSlide();
-        WallJump();
-
-
-        if (Input.GetKeyDown(KeyCode.Space) && isGrounded())
-        {
-            doublejump = true;
-            rb.velocity = new Vector2(rb.velocity.x, jumpingPower);
-        }
-
-        if (Input.GetKeyDown(KeyCode.Space) && !isGrounded() && doublejump)
-        {
-            doublejump = false;
-            rb.velocity = new Vector2(rb.velocity.x, jumpingPower);
-
-        }
-
-        if (Input.GetButtonUp("Jump") && rb.velocity.y > 0f)
-        {
-            rb.velocity = new Vector2(rb.velocity.x, rb.velocity.y * 0.5f);
-        }
-
-        if (isGrounded() == true)
-        {
-            animator.SetBool("isjumping", false);
-            currentWall = null;
-        } else if (isGrounded() == false)
-        {
-           animator.SetBool("isjumping", true);
-
-        }
-
-
-        if (Input.GetKeyDown(KeyCode.X) && !hasMeleeAttacked)
-        {
-            // Trigger the melee animation
-            animator.SetBool("meleeAttack", true);
-            hasMeleeAttacked = true;
-
-            // Flip the character if it's facing left      
-        }
-
-        // Check if the animation has finished playing
-        if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f && hasMeleeAttacked)
-        {
-            
-            animator.SetBool("meleeAttack", false);
-            hasMeleeAttacked = false;
-
-            // Flip the character back to its original direction
-            if (isFacingRight)
+            if (horizontal < 0)
             {
+                animator.SetBool("is running", true);
+
+                transform.localScale = new Vector3(-2, 2, 2);
+            }
+            else if (horizontal > 0)
+            {
+                animator.SetBool("is running", true);
+
                 transform.localScale = new Vector3(2, 2, 2);
+            }
+            else if (horizontal == 0)
+            {
+                animator.SetBool("is running", false);
+
+            }
+
+
+            WallSlide();
+            WallJump();
+
+
+            if (Input.GetKeyDown(KeyCode.Space) && isGrounded())
+            {
+                doublejump = true;
+                rb.velocity = new Vector2(rb.velocity.x, jumpingPower);
+            }
+
+            if (Input.GetKeyDown(KeyCode.Space) && !isGrounded() && doublejump)
+            {
+                doublejump = false;
+                rb.velocity = new Vector2(rb.velocity.x, jumpingPower);
+
+            }
+
+            if (Input.GetButtonUp("Jump") && rb.velocity.y > 0f)
+            {
+                rb.velocity = new Vector2(rb.velocity.x, rb.velocity.y * 0.5f);
+            }
+
+            if (isGrounded() == true)
+            {
+                animator.SetBool("isjumping", false);
+                currentWall = null;
+            }
+            else if (isGrounded() == false)
+            {
+                animator.SetBool("isjumping", true);
+
+            }
+
+
+            if (Input.GetKeyDown(KeyCode.X) && !hasMeleeAttacked)
+            {
+                // Trigger the melee animation
+                animator.SetBool("meleeAttack", true);
+                hasMeleeAttacked = true;
+
+                // Flip the character if it's facing left      
+            }
+
+            // Check if the animation has finished playing
+            if (animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f && hasMeleeAttacked)
+            {
+
+                animator.SetBool("meleeAttack", false);
+                hasMeleeAttacked = false;
+
+                // Flip the character back to its original direction
+                if (isFacingRight)
+                {
+                    transform.localScale = new Vector3(2, 2, 2);
+                }
             }
         }
 
@@ -146,12 +157,28 @@ public class PlayerBehaviour : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.collider.tag == "Enemy" && rb.position.y > collision.contacts[0].point.y && !isGrounded())
+        if (collision.collider.tag == "Enemy")
         {
-            comboGet.comboNum += 1;
-
-            Destroy(collision.collider.gameObject);
-
+            Debug.Log("enemy");
+            if (rb.position.y > collision.contacts[0].point.y && !isGrounded())
+            {
+                comboGet.comboNum += 1;
+                Destroy(collision.collider.gameObject);
+            }
+            else if (isGrounded())
+            {
+                if (rb.position.x < collision.GetContact(0).point.x)
+                {
+                    knockLeft = true;
+                    health.Damage();
+                    
+                } else if (rb.position.x > collision.GetContact(0).point.x)
+                {
+                    knockLeft = false;
+                    health.Damage();
+                }
+                knockBackTime = 0.3f;
+            }
         }
 
     }
@@ -215,6 +242,27 @@ public class PlayerBehaviour : MonoBehaviour
    
     private void FixedUpdate()
     {
-        rb.velocity = new Vector2(horizontal * speed, rb.velocity.y);
+        if (knockBackTime <= 0)
+        {
+            rb.velocity = new Vector2(horizontal * speed, rb.velocity.y);
+        } else
+        {
+            float yVal = knockback;
+            if (knockBackTime < 0.15)
+            {
+                yVal = 0f;
+            }
+            rb.velocity = Vector2.zero;
+            if (knockLeft)
+            {
+                rb.velocity = new Vector2(-knockback, yVal);
+            }
+            if (!knockLeft)
+            {
+                rb.velocity = new Vector2(knockback, yVal);
+            }
+            knockBackTime -= Time.deltaTime;
+        }
+        
     }
 }

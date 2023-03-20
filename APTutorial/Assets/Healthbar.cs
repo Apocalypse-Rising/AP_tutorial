@@ -24,5 +24,15 @@ public class Healthbar : MonoBehaviour
 
         Fill.color = gradient.Evaluate(slider.normalizedValue);
     }
+
+    public void Damage()
+    {
+        slider.value = slider.value - 1;
+        Fill.color = gradient.Evaluate(slider.normalizedValue);
+        if (slider.value == 0)
+        {
+            FindObjectOfType<GameManager>().EndGame();
+        }
+    }
    
 }

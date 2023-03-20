@@ -20,6 +20,6 @@ public class GameManager : MonoBehaviour
 
     void Restart()
     {
-        SceneManager.LoadScene("Level 1");
+        SceneManager.LoadScene("gameOver");
     }
 }
