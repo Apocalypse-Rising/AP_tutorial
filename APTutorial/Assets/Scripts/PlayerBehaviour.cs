@@ -44,9 +44,12 @@ public class PlayerBehaviour : MonoBehaviour
     private ComboCount comboGet;
     private GameObject get;
     private Healthbar health;
+    private LavaRise lava;
     // Start is called before the first frame update
     void Start()
     {
+        GameObject l = GameObject.FindGameObjectWithTag("Lava");
+        lava = l.GetComponent<LavaRise>();
         rb = GetComponent<Rigidbody2D>();
         comboGet = GetComponent<ComboCount>();
         get = GameObject.FindGameObjectWithTag("HealthBar");
@@ -171,13 +174,17 @@ public class PlayerBehaviour : MonoBehaviour
             {
                 if (rb.position.x < collision.GetContact(0).point.x)
                 {
+                    
                     knockLeft = true;
                     health.Damage();
-                    
+                    Debug.Log("Left");
+
                 } else if (rb.position.x > collision.GetContact(0).point.x)
                 {
+                    
                     knockLeft = false;
                     health.Damage();
+                    Debug.Log("Right");
                 }
                 knockBackTime = 0.3f;
             }
@@ -247,8 +254,10 @@ public class PlayerBehaviour : MonoBehaviour
         if (knockBackTime <= 0)
         {
             rb.velocity = new Vector2(horizontal * speed, rb.velocity.y);
+            lava.damaged = false;
         } else
         {
+            lava.damaged = true;
             float yVal = knockback;
             if (knockBackTime < 0.15)
             {
